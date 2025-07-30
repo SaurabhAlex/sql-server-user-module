@@ -2,9 +2,10 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 import uvicorn
 
-from app.routers import users
+from app.routers import users, usermanagement
 from app.database import engine
 from app import models
+import azure_sql_api
 
 # Skipping database initialization to avoid connection errors
 # Commenting out the DB initialization code to allow app to start without DB connection
@@ -34,6 +35,9 @@ app.add_middleware(
 
 # Include routers
 app.include_router(users.router)
+app.include_router(azure_sql_api.router)
+app.include_router(usermanagement.router)
+
 
 # Root endpoint
 @app.get("/", tags=["root"])

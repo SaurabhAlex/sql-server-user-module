@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Boolean, DateTime
+from sqlalchemy import Column, Integer, String, Boolean, DateTime, LargeBinary
 from sqlalchemy.sql import func
 from .database import Base
 
@@ -15,3 +15,17 @@ class User(Base):
 
     def __repr__(self):
         return f"<User(id={self.id}, username={self.username}, email={self.email})>"
+
+class UserCustom(Base):
+    __tablename__ = "User"
+
+    id = Column(Integer, primary_key=True, index=True)
+    u_name = Column(String(100), nullable=False)
+    email = Column(String(100), nullable=False)
+    gender = Column(String(10), nullable=True)
+    mobile_no = Column(String(15), nullable=True)
+    role_id = Column(Integer, nullable=True)
+    u_password = Column(LargeBinary, nullable=False)
+
+    def __repr__(self):
+        return f"<UserCustom(u_name={self.u_name}, email={self.email})>"
