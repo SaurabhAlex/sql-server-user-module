@@ -1,13 +1,12 @@
-from fastapi import FastAPI, HTTPException
+from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 from typing import List
 import pyodbc
 import os
 
-app = FastAPI(
-    title="Azure SQL Server API",
-    description="API to fetch countries and states from Azure SQL Server",
-    version="1.0.0",
+router = APIRouter(
+    prefix="/azure_sql_api",
+    tags=["Azure SQL API"],
 )
 
 # Pydantic models
@@ -36,7 +35,7 @@ def get_connection():
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Database connection error: {str(e)}")
 
-@app.get("/dbcheck")
+@router.get("/dbcheck")
 def db_check():
     try:
         conn = get_connection()
@@ -49,7 +48,7 @@ def db_check():
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Database connection error: {str(e)}")
 
-@app.get("/countries", response_model=List[Country])
+@router.get("/countries", response_model=List[Country])
 def get_countries():
     conn = get_connection()
     cursor = conn.cursor()
@@ -64,7 +63,7 @@ def get_countries():
         cursor.close()
         conn.close()
 
-@app.get("/states/{country_id}", response_model=List[State])
+@router.get("/states/{country_id}", response_model=List[State])
 def get_states(country_id: int):
     conn = get_connection()
     cursor = conn.cursor()
@@ -80,15 +79,13 @@ def get_states(country_id: int):
         cursor.close()
         conn.close()
 
-from pydantic import BaseModel
-
 class User(BaseModel):
     user_id: int
     u_name: str
     email: str
     gender: str | None = None
 
-@app.get("/login/{email}/{password}", response_model=List[User])
+@router.get("/login/{email}/{password}", response_model=List[User])
 def login(email: str, password: str):
     conn = get_connection()
     cursor = conn.cursor()

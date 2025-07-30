@@ -24,3 +24,30 @@ class User(UserBase):
     class Config:
         orm_mode = True
         from_attributes = True
+
+# New Pydantic models for UserCustom
+
+class UserCustomBase(BaseModel):
+    u_name: str
+    email: str
+    gender: Optional[str] = None
+    mobile_no: Optional[str] = None
+    role_id: Optional[int] = None
+
+class UserCustomCreate(UserCustomBase):
+    u_password: bytes
+
+class UserCustomUpdate(BaseModel):
+    u_name: Optional[str] = None
+    email: Optional[str] = None
+    gender: Optional[str] = None
+    mobile_no: Optional[str] = None
+    role_id: Optional[int] = None
+    u_password: Optional[bytes] = None
+
+class UserCustom(UserCustomBase):
+    id: int
+
+    class Config:
+        orm_mode = True
+        from_attributes = True
