@@ -19,7 +19,7 @@ class User(Base):
 class UserCustom(Base):
     __tablename__ = "User"
 
-    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, primary_key=True, index=True)
     u_name = Column(String(100), nullable=False)
     email = Column(String(100), nullable=False)
     gender = Column(String(10), nullable=True)
