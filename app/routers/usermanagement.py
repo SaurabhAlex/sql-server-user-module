@@ -29,30 +29,39 @@ def get_connection():
 async def read_root():
     return {"message": "User Management root endpoint"}
 
-@router.post("/users/", response_model=schemas.UserCustom)
+@router.post("/users/save", response_model=schemas.UserCustom)
 def create_user(user: schemas.UserCustomCreate):
     try:
         conn = get_connection()
         cursor = conn.cursor()
         sql = """
         INSERT INTO [dbo].[User] (u_name, email, gender, mobile_no, role_id, u_password)
+        OUTPUT INSERTED.user_id
         VALUES (?, ?, ?, ?, ?, ?)
         """
         cursor.execute(sql, (user.u_name, user.email, user.gender, user.mobile_no, user.role_id, user.u_password))
+        inserted_id = cursor.fetchone()[0]
         conn.commit()
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error creating user: {str(e)}")
     finally:
         cursor.close()
         conn.close()
-    return user
+    return schemas.UserCustom(
+        id=inserted_id,
+        u_name=user.u_name,
+        email=user.email,
+        gender=user.gender,
+        mobile_no=user.mobile_no,
+        role_id=user.role_id,
+    )
 
 @router.get("/users/{user_id}", response_model=schemas.UserCustom)
 def read_user(user_id: int):
     try:
         conn = get_connection()
         cursor = conn.cursor()
-        sql = "SELECT id, u_name, email, gender, mobile_no, role_id FROM [dbo].[User] WHERE id = ?"
+        sql = "SELECT user_id, u_name, email, gender, mobile_no, role_id FROM [dbo].[User] WHERE user_id = ?"
         cursor.execute(sql, (user_id,))
         row = cursor.fetchone()
         cursor.close()
@@ -83,7 +92,7 @@ def update_user(user_id: int, user: schemas.UserCustomUpdate):
             update_fields.append(f"{key} = ?")
             params.append(value)
         params.append(user_id)
-        sql = f"UPDATE [dbo].[User] SET {', '.join(update_fields)} WHERE id = ?"
+        sql = f"UPDATE [dbo].[User] SET {', '.join(update_fields)} WHERE user_id = ?"
         cursor.execute(sql, params)
         conn.commit()
         cursor.close()
@@ -97,7 +106,7 @@ def delete_user(user_id: int):
     try:
         conn = get_connection()
         cursor = conn.cursor()
-        sql = "DELETE FROM [dbo].[User] WHERE id = ?"
+        sql = "DELETE FROM [dbo].[User] WHERE user_id = ?"
         cursor.execute(sql, (user_id,))
         conn.commit()
         cursor.close()
