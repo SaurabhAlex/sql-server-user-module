@@ -10,20 +10,11 @@ router = APIRouter(
     tags=["User Management"],
 )
 
-# Database connection setup
-def get_connection():
-    server = os.getenv("AZURE_SQL_SERVER", "localhost")
-    database = os.getenv("AZURE_SQL_DATABASE", "SMS")
-    username = os.getenv("AZURE_SQL_USERNAME", "sa")
-    password = os.getenv("AZURE_SQL_PASSWORD", "Alex@123#")
-    driver = '{ODBC Driver 18 for SQL Server}'
+from fastapi import HTTPException
+import os
+import pyodbc
 
-    connection_string = f'DRIVER={driver};SERVER={server};DATABASE={database};UID={username};PWD={password};Encrypt=yes;TrustServerCertificate=yes;'
-    try:
-        conn = pyodbc.connect(connection_string)
-        return conn
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Database connection error: {str(e)}")
+from app.utils.db_connection import get_connection
 
 @router.get("/")
 async def read_root():
@@ -34,12 +25,9 @@ def create_user(user: schemas.UserCustomCreate):
     try:
         conn = get_connection()
         cursor = conn.cursor()
-        sql = """
-        INSERT INTO [dbo].[User] (u_name, email, gender, mobile_no, role_id, u_password)
-        OUTPUT INSERTED.user_id
-        VALUES (?, ?, ?, ?, ?, ?)
-        """
-        cursor.execute(sql, (user.u_name, user.email, user.gender, user.mobile_no, user.role_id, user.u_password))
+        # Call stored procedure sp_createuser
+        cursor.execute("{CALL sp_createuser (?, ?, ?, ?, ?, ?)}", (user.u_name, user.email, user.gender, user.mobile_no, user.role_id, user.u_password))
+        # Assuming stored procedure returns inserted user_id as first result
         inserted_id = cursor.fetchone()[0]
         conn.commit()
     except Exception as e:
@@ -85,15 +73,18 @@ def update_user(user_id: int, user: schemas.UserCustomUpdate):
     try:
         conn = get_connection()
         cursor = conn.cursor()
-        update_fields = []
-        params = []
-        user_data = user.dict(exclude_unset=True)
-        for key, value in user_data.items():
-            update_fields.append(f"{key} = ?")
-            params.append(value)
-        params.append(user_id)
-        sql = f"UPDATE [dbo].[User] SET {', '.join(update_fields)} WHERE user_id = ?"
-        cursor.execute(sql, params)
+        user_data = user.model_dump(exclude_unset=True)
+        # Prepare parameters for stored procedure in correct order
+        params = [
+            user_id,
+            user_data.get("u_name"),
+            user_data.get("email"),
+            user_data.get("gender"),
+            user_data.get("mobile_no"),
+            user_data.get("role_id"),
+        ]
+        # Call stored procedure sp_updateuser
+        cursor.execute("{CALL sp_updateuser (?, ?, ?, ?, ?, ?)}", params)
         conn.commit()
         cursor.close()
         conn.close()
