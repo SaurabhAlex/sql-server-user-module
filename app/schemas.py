@@ -43,7 +43,7 @@ class UserCustomUpdate(BaseModel):
     gender: Optional[str] = None
     mobile_no: Optional[str] = None
     role_id: Optional[int] = None
-    u_password: Optional[bytes] = None
+
 
 class UserCustom(UserCustomBase):
     id: int
